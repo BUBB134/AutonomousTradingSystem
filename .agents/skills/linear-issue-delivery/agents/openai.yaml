@@ -1,0 +1,4 @@
+interface:
+  display_name: "Linear Issue Delivery"
+  short_description: "Deliver a governed Linear issue to reviewed PR"
+  default_prompt: "Use $linear-issue-delivery to deliver the next approved BUB issue through validation and pull request review."

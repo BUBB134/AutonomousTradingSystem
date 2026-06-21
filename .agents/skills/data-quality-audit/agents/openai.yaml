@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data Quality Audit"
+  short_description: "Audit market data provenance, time, and quality"
+  default_prompt: "Use $data-quality-audit to audit this versioned market-data artifact."

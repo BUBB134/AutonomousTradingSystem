@@ -14,6 +14,7 @@ DIST_DIRECTORY = ROOT / "dist"
 VALIDATION_COMMANDS: tuple[tuple[str, ...], ...] = (
     (sys.executable, "-m", "ruff", "format", "--check", "."),
     (sys.executable, "-m", "ruff", "check", "."),
+    (sys.executable, "scripts/check_repository_skills.py"),
     (sys.executable, "scripts/check_import_boundaries.py"),
     (sys.executable, "-m", "pyright"),
     (sys.executable, "-m", "pytest"),

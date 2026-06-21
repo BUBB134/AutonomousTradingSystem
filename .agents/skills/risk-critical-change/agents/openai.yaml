@@ -1,0 +1,4 @@
+interface:
+  display_name: "Risk-Critical Change"
+  short_description: "Deliver safety-sensitive changes with extra evidence"
+  default_prompt: "Use $risk-critical-change to plan and verify this safety-sensitive repository change."

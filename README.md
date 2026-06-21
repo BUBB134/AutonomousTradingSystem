@@ -36,15 +36,16 @@ Run the complete repository validation suite with one command:
 uv run python scripts/validate.py
 ```
 
-That command checks formatting, lint rules, package dependency boundaries, static types, tests, and
-a source distribution whose contents are then used to build the wheel. Tests run with network
-sockets disabled.
+That command checks formatting, lint rules, repository skills, package dependency boundaries,
+static types, tests, and a source distribution whose contents are then used to build the wheel.
+Tests run with network sockets disabled.
 
 The same checks can be run individually:
 
 ```bash
 uv run ruff format --check .
 uv run ruff check .
+uv run python scripts/check_repository_skills.py
 uv run python scripts/check_import_boundaries.py
 uv run pyright
 uv run pytest
@@ -65,7 +66,9 @@ GitHub Actions runs each validation stage independently on every pull request an
 |-- SECURITY.md
 |-- TRADING_MANDATE.md
 |-- .github/workflows/ci.yml
+|-- .agents/skills/
 |-- docs/
+|-- scripts/check_repository_skills.py
 |-- scripts/check_import_boundaries.py
 |-- scripts/validate.py
 |-- src/autonomous_trading/
@@ -85,6 +88,7 @@ Repository work is governed by the following documents:
 - [Quality standard](QUALITY.md) — deterministic testing and evidence expectations
 - [Plans](PLANS.md) — planning requirements and delivery source of truth
 - [Documentation index](docs/README.md) — decisions, implementation plans, runbooks, and validation
+- [Repository skills](docs/skills.md) — bounded Codex workflows and update rules
 
 All changes require human review and merge. No document or implementation may enable live trading
 or access real financial credentials.
@@ -96,3 +100,4 @@ or access real financial credentials.
 - [BUB-46 — Backlog prioritization and execution sequencing](https://linear.app/bubb134/issue/BUB-46/track-autonomous-trading-backlog-prioritization-and-execution)
 - [BUB-6 — Governing documents and repository instructions](https://linear.app/bubb134/issue/BUB-6/add-governing-documents-and-repository-instructions)
 - [BUB-7 — Package boundaries and dependency rules](https://linear.app/bubb134/issue/BUB-7/define-package-boundaries-and-dependency-rules)
+- [BUB-28 — Initial Codex repository skills](https://linear.app/bubb134/issue/BUB-28/add-initial-codex-repository-skills)
