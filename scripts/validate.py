@@ -32,7 +32,7 @@ def main() -> None:
         run(command)
 
     shutil.rmtree(DIST_DIRECTORY, ignore_errors=True)
-    run((sys.executable, "-m", "build", "--sdist", "--wheel", "--outdir", "dist"))
+    run((sys.executable, "-m", "build", "--no-isolation", "--outdir", "dist"))
 
 
 if __name__ == "__main__":
