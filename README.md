@@ -36,8 +36,8 @@ Run the complete repository validation suite with one command:
 uv run python scripts/validate.py
 ```
 
-That command checks formatting, lint rules, static types, tests, and both source and wheel package
-builds. Tests run with network sockets disabled.
+That command checks formatting, lint rules, static types, tests, and a source distribution whose
+contents are then used to build the wheel. Tests run with network sockets disabled.
 
 The same checks can be run individually:
 
@@ -46,7 +46,7 @@ uv run ruff format --check .
 uv run ruff check .
 uv run pyright
 uv run pytest
-uv run python -m build --sdist --wheel
+uv run python -m build --no-isolation
 ```
 
 GitHub Actions runs each validation stage independently on every pull request and every push to
