@@ -1,0 +1,22 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.pyright/
+
+# Virtual environments
+.venv/
+.bootstrap-venv/
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+
+# Coverage and local tooling
+.coverage
+htmlcov/
+.idea/
+.vscode/
