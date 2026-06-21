@@ -10,6 +10,6 @@ A safety-first autonomous research, validation, and paper-trading system for sys
 
 ## Current scope
 
-The first milestone is restricted to research, deterministic backtesting, independent validation, and isolated paper simulation. Live trading, leverage, short selling, and real brokerage credentials are not permitted.
+The first milestone is restricted to research, deterministic backtesting, independent validation, and isolated paper simulation. Live trading, leverage, short selling, and real brokerage credentials are not permitted as of yet.
 
 The detailed repository structure, governing mandate, engineering instructions, and validation tooling will be added through the linked Linear backlog.
