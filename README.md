@@ -36,14 +36,16 @@ Run the complete repository validation suite with one command:
 uv run python scripts/validate.py
 ```
 
-That command checks formatting, lint rules, static types, tests, and a source distribution whose
-contents are then used to build the wheel. Tests run with network sockets disabled.
+That command checks formatting, lint rules, package dependency boundaries, static types, tests, and
+a source distribution whose contents are then used to build the wheel. Tests run with network
+sockets disabled.
 
 The same checks can be run individually:
 
 ```bash
 uv run ruff format --check .
 uv run ruff check .
+uv run python scripts/check_import_boundaries.py
 uv run pyright
 uv run pytest
 uv run python -m build --no-isolation
@@ -64,6 +66,7 @@ GitHub Actions runs each validation stage independently on every pull request an
 |-- TRADING_MANDATE.md
 |-- .github/workflows/ci.yml
 |-- docs/
+|-- scripts/check_import_boundaries.py
 |-- scripts/validate.py
 |-- src/autonomous_trading/
 |-- tests/
@@ -92,3 +95,4 @@ or access real financial credentials.
 - [Autonomous Trading Vertical Slice initiative](https://linear.app/bubb134/initiative/autonomous-trading-vertical-slice-fa5d8c010538)
 - [BUB-46 — Backlog prioritization and execution sequencing](https://linear.app/bubb134/issue/BUB-46/track-autonomous-trading-backlog-prioritization-and-execution)
 - [BUB-6 — Governing documents and repository instructions](https://linear.app/bubb134/issue/BUB-6/add-governing-documents-and-repository-instructions)
+- [BUB-7 — Package boundaries and dependency rules](https://linear.app/bubb134/issue/BUB-7/define-package-boundaries-and-dependency-rules)

@@ -75,8 +75,63 @@ Strategy packages must not import execution adapters. Validation must operate th
 artifacts and stable interfaces rather than strategy internals. Risk and reconciliation must remain
 independently invocable and testable.
 
-Detailed package dependency rules will be defined by BUB-7. Until then, new packages must not
-create circular dependencies or collapse the separation described here.
+The principal dependency flow is:
+
+```mermaid
+flowchart TD
+    deployment --> control_plane
+    deployment --> monitoring
+    deployment --> registry
+    deployment --> validation
+    deployment --> experiment
+    control_plane --> monitoring
+    monitoring --> registry
+    registry --> validation
+    validation --> experiment
+    experiment --> backtest
+    backtest --> reconciliation
+    reconciliation --> execution
+    execution --> risk
+    risk --> portfolio
+    portfolio --> strategy
+    strategy --> data
+```
+
+Arrows mean "may import". The diagram is intentionally simplified; the table below is the exact
+direct-import policy enforced by `scripts/check_import_boundaries.py`.
+
+## Enforced package contracts
+
+Cross-package imports must use symbols exported by the target package's `__init__.py`. Importing
+another package's internal modules is prohibited. At BUB-7 completion these public package roots are
+present but intentionally export no runtime symbols; the owning implementation ticket must add a
+typed, versioned public contract before another package can consume it.
+
+The root `autonomous_trading` package may expose repository metadata such as `__version__`, but it
+must not re-export component symbols. Dynamic imports are prohibited in boundary-controlled source
+because they would bypass deterministic static dependency enforcement.
+
+| Package | Owner and responsibility | Allowed direct package imports | Planned public contract |
+| --- | --- | --- | --- |
+| `configuration` | Platform configuration; typed, versioned, fail-closed settings | none | Configuration snapshots and validated loaders |
+| `audit` | Audit integrity; append-only attributable events | none | Versioned immutable audit events |
+| `data` | Data integrity; canonical records and approved local access | none | Market-data records, quality results, and reader protocols |
+| `strategy` | Strategy authors; chronology-safe signal generation only | `data` | Signal-generation protocols and signal records |
+| `portfolio` | Portfolio construction; signals to proposed targets | `data`, `strategy` | Proposed target and portfolio-state contracts |
+| `risk` | Independent risk controls; approve, constrain, or reject paper intent | `audit`, `configuration`, `data`, `portfolio` | Risk decisions and approved paper intent |
+| `execution` | Paper execution; deterministic idempotent simulation only | `audit`, `configuration`, `portfolio`, `risk` | Simulated order commands and lifecycle events |
+| `reconciliation` | Independent reconciliation of expected and observed simulated state | `audit`, `execution`, `portfolio` | Reconciliation inputs, mismatches, and outcomes |
+| `backtest` | Deterministic chronology-safe simulation orchestration | `audit`, `configuration`, `data`, `execution`, `portfolio`, `reconciliation`, `risk`, `strategy` | Backtest requests and immutable results |
+| `experiment` | Experiment owners; immutable manifests and artifact references | `audit`, `backtest`, `configuration` | Versioned manifests and immutable artifact references |
+| `validation` | Independent validators; attempt to falsify experiment claims | `data`, `experiment` | Validation checks and reports; no strategy internals |
+| `registry` | Lifecycle and evidence registry; record state and promotion evidence | `audit`, `configuration`, `experiment`, `validation` | Strategy, experiment, and promotion records |
+| `monitoring` | Operations visibility; read-only health and evidence views | `audit`, `execution`, `experiment`, `reconciliation`, `registry`, `risk`, `validation` | Health snapshots, alerts, and metrics |
+| `control_plane` | Operators; read-only status and audited simulator controls | `audit`, `configuration`, `monitoring` | Status queries and simulator-only control requests |
+| `deployment` | Repository operators; research and isolated-paper composition root | all packages above | Research, backtest, validation, and paper entrypoints only |
+
+No package has a live-broker, real-capital, production-deployment, leverage, short-selling, or
+derivatives contract. The broad imports allowed to `deployment` make it a composition root; they do
+not grant additional operating authority.
 
 ## Trust boundaries
 
