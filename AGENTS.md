@@ -41,6 +41,7 @@ The equivalent individual commands are:
 ```bash
 uv run ruff format --check .
 uv run ruff check .
+uv run python scripts/check_import_boundaries.py
 uv run pyright
 uv run pytest
 uv run python -m build --no-isolation
@@ -74,6 +75,8 @@ ticket rather than silently expanding scope.
 - Keep audit and experiment records append-only and attributable.
 - Keep strategy generation separate from independent validation.
 - Keep strategy code unable to call execution or broker-facing interfaces directly.
+- Import other top-level packages only through their public package interfaces and only in the
+  direction permitted by `scripts/check_import_boundaries.py`.
 - Keep risk, execution, and reconciliation controls independently testable.
 - Avoid hidden global state, wall-clock dependencies, and uncontrolled randomness.
 - Never log credentials, tokens, personal financial data, or unredacted secret values.

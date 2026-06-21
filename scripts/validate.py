@@ -14,6 +14,7 @@ DIST_DIRECTORY = ROOT / "dist"
 VALIDATION_COMMANDS: tuple[tuple[str, ...], ...] = (
     (sys.executable, "-m", "ruff", "format", "--check", "."),
     (sys.executable, "-m", "ruff", "check", "."),
+    (sys.executable, "scripts/check_import_boundaries.py"),
     (sys.executable, "-m", "pyright"),
     (sys.executable, "-m", "pytest"),
 )
@@ -27,7 +28,7 @@ def run(command: Sequence[str]) -> None:
 
 
 def main() -> None:
-    """Validate formatting, linting, types, tests, and package build."""
+    """Validate formatting, linting, package boundaries, types, tests, and build."""
     for command in VALIDATION_COMMANDS:
         run(command)
 

@@ -22,8 +22,9 @@ Run all repository checks:
 uv run python scripts/validate.py
 ```
 
-This covers formatting, linting, strict static types, tests, and package build. CI must pass before
-merge. Tests must not require public-network access or external services.
+This covers formatting, linting, package-boundary enforcement, strict static types, tests, and
+package build. CI must pass before merge. Tests must not require public-network access or external
+services.
 
 ## Test expectations
 

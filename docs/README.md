@@ -16,3 +16,8 @@ Repository documentation is organised as follows:
 
 Documentation must distinguish current behaviour from intended future design. No document may
 weaken `TRADING_MANDATE.md`.
+
+Current architecture records:
+
+- [ADR 0001: Enforce package dependency direction](decisions/0001-enforce-package-dependency-direction.md)
+- [BUB-7 package-boundary implementation plan](plans/BUB-7-package-boundaries.md)
