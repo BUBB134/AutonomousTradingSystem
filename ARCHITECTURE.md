@@ -111,9 +111,11 @@ The root `autonomous_trading` package may expose repository metadata such as `__
 must not re-export component symbols. Dynamic imports are prohibited in boundary-controlled source
 because they would bypass deterministic static dependency enforcement.
 
-| Package | Owner and responsibility | Allowed direct package imports | Planned public contract |
+Unless a row is marked implemented, its public contract remains planned future work.
+
+| Package | Owner and responsibility | Allowed direct package imports | Public contract |
 | --- | --- | --- | --- |
-| `configuration` | Platform configuration; typed, versioned, fail-closed settings | none | Configuration snapshots and validated loaders |
+| `configuration` | Platform configuration; typed, versioned, fail-closed settings | none | Implemented: immutable schemas, strict TOML loaders, and content-addressed snapshots |
 | `audit` | Audit integrity; append-only attributable events | none | Versioned immutable audit events |
 | `data` | Data integrity; canonical records and approved local access | none | Market-data records, quality results, and reader protocols |
 | `strategy` | Strategy authors; chronology-safe signal generation only | `data` | Signal-generation protocols and signal records |

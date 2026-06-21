@@ -1,6 +1,32 @@
-"""Typed, versioned, fail-closed configuration interfaces.
+"""Typed, versioned, fail-closed configuration interfaces."""
 
-No public runtime interface exists yet. BUB-8 will introduce the first configuration API.
-"""
+from .loader import load_configuration, loads_configuration
+from .schema import (
+    CONFIGURATION_SCHEMA_VERSION,
+    Configuration,
+    ConfigurationError,
+    ConfigurationSnapshot,
+    InstrumentUniverse,
+    LiveSettings,
+    OperatingEnvironment,
+    PaperSettings,
+    PromotionGates,
+    ResearchBudget,
+    SecretReference,
+)
 
-__all__: tuple[str, ...] = ()
+__all__ = [
+    "CONFIGURATION_SCHEMA_VERSION",
+    "Configuration",
+    "ConfigurationError",
+    "ConfigurationSnapshot",
+    "InstrumentUniverse",
+    "LiveSettings",
+    "OperatingEnvironment",
+    "PaperSettings",
+    "PromotionGates",
+    "ResearchBudget",
+    "SecretReference",
+    "load_configuration",
+    "loads_configuration",
+]

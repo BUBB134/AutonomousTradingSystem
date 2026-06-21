@@ -9,8 +9,9 @@ The first milestone is restricted to research, deterministic backtesting, indepe
 validation, and isolated paper simulation. Live trading, leverage, short selling, brokerage
 connections, and real financial credentials are not permitted.
 
-This bootstrap contains development infrastructure only. It intentionally contains no market
-data integrations, strategies, broker SDKs, or trading logic.
+The repository currently contains development infrastructure, governed package boundaries, and a
+typed fail-closed configuration boundary. It intentionally contains no market-data integrations,
+strategies, broker SDKs, or trading logic.
 
 ## Requirements
 
@@ -89,6 +90,7 @@ Repository work is governed by the following documents:
 - [Plans](PLANS.md) — planning requirements and delivery source of truth
 - [Documentation index](docs/README.md) — decisions, implementation plans, runbooks, and validation
 - [Repository skills](docs/skills.md) — bounded Codex workflows and update rules
+- [Configuration](docs/configuration.md) — versioned schemas, failure behaviour, and snapshots
 
 All changes require human review and merge. No document or implementation may enable live trading
 or access real financial credentials.
