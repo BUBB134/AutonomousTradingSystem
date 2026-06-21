@@ -13,3 +13,4 @@ rather than rewriting history after implementation.
 ## Plans
 
 - [BUB-7: Define package boundaries and dependency rules](BUB-7-package-boundaries.md)
+- [BUB-28: Add initial Codex repository skills](BUB-28-initial-repository-skills.md)

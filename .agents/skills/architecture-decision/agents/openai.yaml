@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Decision"
+  short_description: "Record governed architecture and trust decisions"
+  default_prompt: "Use $architecture-decision to evaluate and record this repository architecture decision."

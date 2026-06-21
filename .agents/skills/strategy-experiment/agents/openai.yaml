@@ -1,0 +1,4 @@
+interface:
+  display_name: "Strategy Experiment"
+  short_description: "Run deterministic research-only strategy experiments"
+  default_prompt: "Use $strategy-experiment to design this deterministic research-only strategy experiment."

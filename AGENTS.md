@@ -41,6 +41,7 @@ The equivalent individual commands are:
 ```bash
 uv run ruff format --check .
 uv run ruff check .
+uv run python scripts/check_repository_skills.py
 uv run python scripts/check_import_boundaries.py
 uv run pyright
 uv run pytest

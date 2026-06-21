@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adversarial Strategy Validation"
+  short_description: "Independently challenge immutable strategy evidence"
+  default_prompt: "Use $adversarial-strategy-validation to challenge this immutable experiment evidence independently."
