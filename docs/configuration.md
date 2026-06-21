@@ -91,7 +91,8 @@ and broker credentials are outside the repository's current authority.
 `Configuration.snapshot()` returns canonical JSON and its SHA-256 digest. The representation:
 
 - includes the schema version and every material typed setting;
-- normalizes decimal values as strings;
+- parses TOML decimal values directly without a binary floating-point round trip;
+- normalizes numerically equal decimal values as the same strings;
 - sorts object keys;
 - includes secret reference identifiers but cannot include secret values; and
 - is deterministic for identical typed inputs.

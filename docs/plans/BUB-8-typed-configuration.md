@@ -68,8 +68,8 @@ configuration error. No new dependency or cross-package import is required.
 
 - TOML bytes and the expected environment are the only loader inputs.
 - The loader does not read the wall clock, process environment, network, or global mutable state.
-- Decimal configuration values are normalized from their textual numeric representation and
-  serialized as strings in snapshots.
+- Decimal configuration values are parsed directly before validation, without a binary
+  floating-point round trip, and normalized as strings in snapshots.
 - Equivalent typed configurations produce byte-identical canonical snapshot JSON and the same
   SHA-256 digest.
 

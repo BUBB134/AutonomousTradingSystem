@@ -271,6 +271,20 @@ def test_invalid_versions_types_and_boundaries_fail_closed(
         )
 
 
+def test_decimal_precision_is_preserved_before_safety_validation() -> None:
+    """An over-limit decimal cannot round down through binary floating point."""
+    document = _configuration_toml().replace(
+        "max_position_fraction = 0.25",
+        "max_position_fraction = 1.0000000000000001",
+    )
+
+    with pytest.raises(ConfigurationError, match="must be at most 1"):
+        loads_configuration(
+            document,
+            expected_environment=OperatingEnvironment.RESEARCH,
+        )
+
+
 @pytest.mark.parametrize(
     ("document", "expected_message"),
     [
@@ -400,9 +414,17 @@ def test_snapshots_are_canonical_and_content_addressed() -> None:
         expected_environment=OperatingEnvironment.RESEARCH,
     ).snapshot()
     second = loads_configuration(
-        _configuration_toml().replace(
-            "max_parameter_combinations = 64\nmax_runtime_seconds = 900",
-            "max_runtime_seconds = 900\nmax_parameter_combinations = 64",
+        (
+            _configuration_toml()
+            .replace(
+                "max_parameter_combinations = 64\nmax_runtime_seconds = 900",
+                "max_runtime_seconds = 900\nmax_parameter_combinations = 64",
+            )
+            .replace("starting_cash = 100000.00", "starting_cash = 100000.0")
+            .replace(
+                "maximum_drawdown_fraction = 0.20",
+                "maximum_drawdown_fraction = 0.2",
+            )
         ),
         expected_environment=OperatingEnvironment.RESEARCH,
     ).snapshot()

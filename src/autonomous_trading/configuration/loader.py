@@ -81,9 +81,11 @@ def _boolean(value: Mapping[str, object], key: str, path: str) -> bool:
 
 def _decimal(value: Mapping[str, object], key: str, path: str) -> Decimal:
     candidate = value[key]
-    if type(candidate) not in {int, float}:
+    if type(candidate) not in {int, Decimal}:
         raise ConfigurationError(f"{path}.{key} must be a number")
-    return Decimal(str(candidate))
+    if type(candidate) is int:
+        return Decimal(candidate)
+    return cast(Decimal, candidate)
 
 
 def _string_tuple(value: Mapping[str, object], key: str, path: str) -> tuple[str, ...]:
@@ -313,7 +315,10 @@ def loads_configuration(
     else:
         text = data
     try:
-        document = cast(Mapping[str, object], tomllib.loads(text))
+        document = cast(
+            Mapping[str, object],
+            tomllib.loads(text, parse_float=Decimal),
+        )
     except tomllib.TOMLDecodeError as error:
         raise ConfigurationError(f"configuration TOML is invalid: {error}") from error
     return _parse_configuration(document, expected_environment=expected_environment)

@@ -57,6 +57,13 @@ def _validate_decimal(
         raise ConfigurationError(f"{name} must be at most {maximum}")
 
 
+def _canonical_decimal(value: Decimal) -> str:
+    normalized = value.normalize()
+    if normalized == 0:
+        return "0"
+    return format(normalized, "f")
+
+
 @dataclass(frozen=True, slots=True)
 class ResearchBudget:
     """Deterministic upper bounds for research work."""
@@ -280,14 +287,16 @@ class Configuration:
                 "enabled": self.paper.enabled,
                 "leverage_enabled": self.paper.leverage_enabled,
                 "max_open_positions": self.paper.max_open_positions,
-                "max_position_fraction": str(self.paper.max_position_fraction),
+                "max_position_fraction": _canonical_decimal(self.paper.max_position_fraction),
                 "short_selling_enabled": self.paper.short_selling_enabled,
-                "starting_cash": str(self.paper.starting_cash),
+                "starting_cash": _canonical_decimal(self.paper.starting_cash),
             },
             "promotion_gates": {
-                "maximum_drawdown_fraction": str(self.promotion_gates.maximum_drawdown_fraction),
+                "maximum_drawdown_fraction": _canonical_decimal(
+                    self.promotion_gates.maximum_drawdown_fraction
+                ),
                 "minimum_observations": self.promotion_gates.minimum_observations,
-                "minimum_out_of_sample_fraction": str(
+                "minimum_out_of_sample_fraction": _canonical_decimal(
                     self.promotion_gates.minimum_out_of_sample_fraction
                 ),
                 "require_independent_validation": (
