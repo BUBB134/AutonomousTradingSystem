@@ -107,6 +107,10 @@ another package's internal modules is prohibited. At BUB-7 completion these publ
 present but intentionally export no runtime symbols; the owning implementation ticket must add a
 typed, versioned public contract before another package can consume it.
 
+The root `autonomous_trading` package may expose repository metadata such as `__version__`, but it
+must not re-export component symbols. Dynamic imports are prohibited in boundary-controlled source
+because they would bypass deterministic static dependency enforcement.
+
 | Package | Owner and responsibility | Allowed direct package imports | Planned public contract |
 | --- | --- | --- | --- |
 | `configuration` | Platform configuration; typed, versioned, fail-closed settings | none | Configuration snapshots and validated loaders |

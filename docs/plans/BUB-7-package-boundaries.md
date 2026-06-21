@@ -34,7 +34,9 @@ it. Add an AST-based repository check with an explicit allow-list of direct depe
 
 - undeclared top-level packages;
 - imports outside the allowed dependency direction; and
-- imports of another package's implementation submodules.
+- imports of another package's implementation submodules;
+- component re-exports from the root package; and
+- dynamic imports that bypass static dependency inspection.
 
 ## Package and dependency impact
 

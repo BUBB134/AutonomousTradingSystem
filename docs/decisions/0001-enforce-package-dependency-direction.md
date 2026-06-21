@@ -23,6 +23,9 @@ Cross-package imports:
 1. must follow the declared dependency direction; and
 2. must use symbols exported by the dependency package's `__init__.py`.
 
+The root package must not re-export component internals, and component source must not use dynamic
+imports. These constraints prevent alternate import shapes from bypassing the declared graph.
+
 The checker runs in the repository validation command and as a dedicated CI job. New top-level
 packages fail validation until their boundary is deliberately reviewed and declared.
 

@@ -9,6 +9,7 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PACKAGE_ROOT = REPOSITORY_ROOT / "src" / "autonomous_trading"
 OUTSIDE_PACKAGE_ROOT = "<outside autonomous_trading>"
+ROOT_PACKAGE = "<autonomous_trading root>"
 
 # A package may import itself and the packages listed here. Cross-package imports must target the
 # dependency package's public ``__init__.py`` interface rather than an internal submodule.
@@ -88,10 +89,13 @@ class InternalImport:
 
     target_package: str
     targets_internal_module: bool
+    imported_names: tuple[str, ...] = ()
 
 
 def _source_package(path: Path, package_root: Path) -> str | None:
     relative_path = path.relative_to(package_root)
+    if relative_path == Path("__init__.py"):
+        return ROOT_PACKAGE
     if len(relative_path.parts) < 2:
         return None
     return relative_path.parts[0]
@@ -139,6 +143,7 @@ def _relative_internal_import(
             InternalImport(
                 target_package=base_parts[0],
                 targets_internal_module=len(base_parts) > 1,
+                imported_names=tuple(alias.name for alias in node.names),
             ),
         )
 
@@ -151,6 +156,7 @@ def _relative_internal_import(
                 InternalImport(
                     target_package=resolved_parts[0],
                     targets_internal_module=len(resolved_parts) > 1,
+                    imported_names=() if not base_parts else (alias.name,),
                 )
             )
     return tuple(imports)
@@ -186,7 +192,64 @@ def _imports_from_node(
         return ()
 
     internal_import = _absolute_internal_import(node.module)
-    return (internal_import,) if internal_import is not None else ()
+    if internal_import is None:
+        return ()
+    return (
+        InternalImport(
+            target_package=internal_import.target_package,
+            targets_internal_module=internal_import.targets_internal_module,
+            imported_names=tuple(alias.name for alias in node.names),
+        ),
+    )
+
+
+def _targets_internal_module(
+    internal_import: InternalImport,
+    *,
+    package_root: Path,
+) -> bool:
+    if internal_import.targets_internal_module:
+        return True
+
+    target_root = package_root / internal_import.target_package
+    for imported_name in internal_import.imported_names:
+        imported_path = target_root.joinpath(*imported_name.split("."))
+        if imported_path.with_suffix(".py").is_file():
+            return True
+        if (imported_path / "__init__.py").is_file():
+            return True
+    return False
+
+
+def _dynamic_import_calls(tree: ast.AST) -> tuple[ast.Call, ...]:
+    importlib_aliases: set[str] = set()
+    import_module_aliases: set[str] = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "importlib":
+                    importlib_aliases.add(alias.asname or alias.name)
+        elif isinstance(node, ast.ImportFrom) and node.module == "importlib":
+            for alias in node.names:
+                if alias.name == "import_module":
+                    import_module_aliases.add(alias.asname or alias.name)
+
+    dynamic_calls: list[ast.Call] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if (
+            isinstance(node.func, ast.Name)
+            and (node.func.id == "__import__" or node.func.id in import_module_aliases)
+        ) or (
+            isinstance(node.func, ast.Attribute)
+            and node.func.attr == "import_module"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id in importlib_aliases
+        ):
+            dynamic_calls.append(node)
+    return tuple(dynamic_calls)
 
 
 def _policy_violations(package_root: Path) -> list[BoundaryViolation]:
@@ -317,6 +380,19 @@ def find_boundary_violations(
             )
             continue
 
+        if source_package not in ALLOWED_DEPENDENCIES and source_package != ROOT_PACKAGE:
+            continue
+
+        source_dependencies = ALLOWED_DEPENDENCIES.get(source_package, frozenset())
+        for node in _dynamic_import_calls(tree):
+            violations.append(
+                BoundaryViolation(
+                    path=path,
+                    line=node.lineno,
+                    message=f"{source_package!r} must not use dynamic imports",
+                )
+            )
+
         for node in ast.walk(tree):
             if not isinstance(node, ast.Import | ast.ImportFrom):
                 continue
@@ -351,7 +427,7 @@ def find_boundary_violations(
                         )
                     )
                     continue
-                if target_package not in ALLOWED_DEPENDENCIES[source_package]:
+                if target_package not in source_dependencies:
                     violations.append(
                         BoundaryViolation(
                             path=path,
@@ -360,7 +436,7 @@ def find_boundary_violations(
                         )
                     )
                     continue
-                if internal_import.targets_internal_module:
+                if _targets_internal_module(internal_import, package_root=package_root):
                     violations.append(
                         BoundaryViolation(
                             path=path,
