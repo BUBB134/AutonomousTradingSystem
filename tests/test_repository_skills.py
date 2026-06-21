@@ -69,6 +69,31 @@ def test_skill_name_must_match_directory(skills_tree: Path) -> None:
     assert any("must match the skill directory" in violation.message for violation in violations)
 
 
+def test_frontmatter_fields_must_be_yaml_strings(skills_tree: Path) -> None:
+    """YAML collections cannot masquerade as valid skill trigger descriptions."""
+    skill_file = skills_tree / "architecture-decision" / "SKILL.md"
+    skill_file.write_text(
+        skill_file.read_text(encoding="utf-8")
+        .replace(
+            "description: Evaluate and record",
+            "description: [Use this skill to evaluate and record",
+            1,
+        )
+        .replace(
+            "decisions. Use when",
+            "decisions, Use when]",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    violations = find_skill_violations(skills_tree)
+
+    assert any(
+        violation.message == "frontmatter description must be a string" for violation in violations
+    )
+
+
 def test_unresolved_skill_template_fails_closed(skills_tree: Path) -> None:
     """Generated TODO placeholders cannot pass repository validation."""
     skill_file = skills_tree / "architecture-decision" / "SKILL.md"
@@ -115,6 +140,36 @@ def test_metadata_prompt_must_invoke_its_skill(skills_tree: Path) -> None:
     violations = find_skill_violations(skills_tree)
 
     assert any(
-        "default_prompt must explicitly invoke $data-quality-audit" in violation.message
+        "interface.default_prompt must explicitly invoke $data-quality-audit" in violation.message
         for violation in violations
+    )
+
+
+def test_metadata_fields_must_be_nested_under_interface(skills_tree: Path) -> None:
+    """Top-level metadata fields cannot satisfy the required interface contract."""
+    metadata_file = skills_tree / "strategy-experiment" / "agents" / "openai.yaml"
+    metadata_file.write_text(
+        metadata_file.read_text(encoding="utf-8")
+        .replace(
+            "interface:\n  display_name:",
+            "interface: []\ndisplay_name:",
+            1,
+        )
+        .replace(
+            "\n  short_description:",
+            "\nshort_description:",
+            1,
+        )
+        .replace(
+            "\n  default_prompt:",
+            "\ndefault_prompt:",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    violations = find_skill_violations(skills_tree)
+
+    assert any(
+        violation.message == "metadata interface must be a YAML mapping" for violation in violations
     )

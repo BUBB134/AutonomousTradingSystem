@@ -6,6 +6,9 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SKILLS_ROOT = ROOT / ".agents" / "skills"
@@ -75,7 +78,22 @@ class SkillViolation:
     message: str
 
 
-def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
+def _parse_yaml_mapping(text: str, context: str) -> dict[str, object]:
+    try:
+        loaded = cast(object, yaml.safe_load(text))
+    except yaml.YAMLError as error:
+        raise ValueError(f"{context} is not valid YAML: {error}") from error
+
+    if not isinstance(loaded, dict):
+        raise ValueError(f"{context} must be a YAML mapping")
+    mapping = cast(dict[object, object], loaded)
+    if not all(isinstance(key, str) for key in mapping):
+        raise ValueError(f"{context} keys must be strings")
+
+    return {cast(str, key): value for key, value in mapping.items()}
+
+
+def _parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
     lines = text.splitlines()
     if not lines or lines[0] != "---":
         raise ValueError("SKILL.md must start with YAML frontmatter")
@@ -85,25 +103,11 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
     except ValueError as error:
         raise ValueError("SKILL.md frontmatter is not closed") from error
 
-    fields: dict[str, str] = {}
-    for line in lines[1:closing_index]:
-        if not line.strip():
-            continue
-        key, separator, value = line.partition(":")
-        if not separator:
-            raise ValueError(f"invalid frontmatter line: {line!r}")
-        normalized_key = key.strip()
-        if normalized_key in fields:
-            raise ValueError(f"duplicate frontmatter field: {normalized_key!r}")
-        fields[normalized_key] = value.strip()
-
+    fields = _parse_yaml_mapping(
+        "\n".join(lines[1:closing_index]),
+        "SKILL.md frontmatter",
+    )
     return fields, "\n".join(lines[closing_index + 1 :])
-
-
-def _quoted_metadata_value(text: str, key: str) -> str | None:
-    pattern = re.compile(rf'^\s*{re.escape(key)}:\s*"([^"]+)"\s*$', re.MULTILINE)
-    match = pattern.search(text)
-    return match.group(1) if match else None
 
 
 def _validate_skill(skill_root: Path, skill_name: str) -> list[SkillViolation]:
@@ -140,6 +144,14 @@ def _validate_skill(skill_root: Path, skill_name: str) -> list[SkillViolation]:
         )
 
     declared_name = frontmatter.get("name")
+    description = frontmatter.get("description")
+    if not isinstance(declared_name, str):
+        violations.append(SkillViolation(skill_file, "frontmatter name must be a string"))
+        declared_name = None
+    if not isinstance(description, str):
+        violations.append(SkillViolation(skill_file, "frontmatter description must be a string"))
+        description = ""
+
     if declared_name != skill_name:
         violations.append(
             SkillViolation(
@@ -152,7 +164,6 @@ def _validate_skill(skill_root: Path, skill_name: str) -> list[SkillViolation]:
             SkillViolation(skill_file, "frontmatter name must use lowercase hyphen-case")
         )
 
-    description = frontmatter.get("description", "")
     if len(description) < 80 or "Use " not in description:
         violations.append(
             SkillViolation(
@@ -179,23 +190,43 @@ def _validate_skill(skill_root: Path, skill_name: str) -> list[SkillViolation]:
 
     if "TODO" in metadata_text:
         violations.append(SkillViolation(metadata_file, "metadata contains an unresolved TODO"))
-    if "interface:" not in metadata_text:
-        violations.append(SkillViolation(metadata_file, "metadata interface section is missing"))
 
-    display_name = _quoted_metadata_value(metadata_text, "display_name")
-    short_description = _quoted_metadata_value(metadata_text, "short_description")
-    default_prompt = _quoted_metadata_value(metadata_text, "default_prompt")
-    if not display_name:
-        violations.append(SkillViolation(metadata_file, "display_name must be a quoted string"))
-    if short_description is None or not 25 <= len(short_description) <= 64:
+    try:
+        metadata = _parse_yaml_mapping(metadata_text, "agents/openai.yaml")
+    except ValueError as error:
+        violations.append(SkillViolation(metadata_file, str(error)))
+        return violations
+
+    interface = metadata.get("interface")
+    if not isinstance(interface, dict):
         violations.append(
-            SkillViolation(metadata_file, "short_description must contain 25 to 64 characters")
+            SkillViolation(metadata_file, "metadata interface must be a YAML mapping")
         )
-    if default_prompt is None or f"${skill_name}" not in default_prompt:
+        return violations
+
+    interface_mapping = cast(dict[object, object], interface)
+    if not all(isinstance(key, str) for key in interface_mapping):
+        violations.append(SkillViolation(metadata_file, "metadata interface keys must be strings"))
+        return violations
+
+    typed_interface = {cast(str, key): value for key, value in interface_mapping.items()}
+    display_name = typed_interface.get("display_name")
+    short_description = typed_interface.get("short_description")
+    default_prompt = typed_interface.get("default_prompt")
+    if not isinstance(display_name, str) or not display_name:
+        violations.append(SkillViolation(metadata_file, "interface.display_name must be a string"))
+    if not isinstance(short_description, str) or not 25 <= len(short_description) <= 64:
         violations.append(
             SkillViolation(
                 metadata_file,
-                f"default_prompt must explicitly invoke ${skill_name}",
+                "interface.short_description must contain 25 to 64 characters",
+            )
+        )
+    if not isinstance(default_prompt, str) or f"${skill_name}" not in default_prompt:
+        violations.append(
+            SkillViolation(
+                metadata_file,
+                f"interface.default_prompt must explicitly invoke ${skill_name}",
             )
         )
 
