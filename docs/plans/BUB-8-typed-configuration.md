@@ -69,15 +69,16 @@ configuration error. No new dependency or cross-package import is required.
 - TOML bytes and the expected environment are the only loader inputs.
 - The loader does not read the wall clock, process environment, network, or global mutable state.
 - Decimal configuration values are parsed directly before validation, without a binary
-  floating-point round trip, and normalized as strings in snapshots.
+  floating-point round trip, and serialized from their exact coefficient and exponent without
+  consulting the active decimal context.
 - Equivalent typed configurations produce byte-identical canonical snapshot JSON and the same
   SHA-256 digest.
 
 ## Safety and failure behaviour
 
-- Unsupported schema versions, missing fields, unknown fields, malformed TOML, invalid types,
-  duplicate instruments, invalid ranges, environment mismatches, and unsafe permission flags raise
-  `ConfigurationError`.
+- Unsupported schema versions, missing fields, unknown fields, malformed TOML, parser conversion
+  failures, invalid types, duplicate instruments, invalid ranges, environment mismatches, and
+  unsafe permission flags raise `ConfigurationError`.
 - Paper mode must be explicit: paper settings are enabled only for the `paper` environment and are
   disabled for research, backtest, and validation.
 - Live trading, leverage, and short selling are false-only fields in the initial schema.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 
@@ -434,6 +435,40 @@ def test_snapshots_are_canonical_and_content_addressed() -> None:
     assert '"live":{"enabled":false' in first.canonical_json
 
 
+def test_snapshots_preserve_distinct_high_precision_decimal_values() -> None:
+    """Snapshot hashing does not round through the active Decimal context."""
+    first_value = "0.12345678901234567890123456789"
+    second_value = "0.123456789012345678901234567891"
+    first = loads_configuration(
+        _configuration_toml().replace(
+            "minimum_out_of_sample_fraction = 0.25",
+            f"minimum_out_of_sample_fraction = {first_value}",
+        ),
+        expected_environment=OperatingEnvironment.RESEARCH,
+    ).snapshot()
+    second = loads_configuration(
+        _configuration_toml().replace(
+            "minimum_out_of_sample_fraction = 0.25",
+            f"minimum_out_of_sample_fraction = {second_value}",
+        ),
+        expected_environment=OperatingEnvironment.RESEARCH,
+    ).snapshot()
+
+    first_payload = json.loads(first.canonical_json)
+    second_payload = json.loads(second.canonical_json)
+
+    assert first.sha256 != second.sha256
+    assert first.canonical_json != second.canonical_json
+    assert (
+        first_payload["promotion_gates"]["minimum_out_of_sample_fraction"]
+        == "12345678901234567890123456789e-29"
+    )
+    assert (
+        second_payload["promotion_gates"]["minimum_out_of_sample_fraction"]
+        == "123456789012345678901234567891e-30"
+    )
+
+
 def test_inclusive_numeric_boundaries_are_accepted() -> None:
     """Documented inclusive fractions remain valid at their exact boundaries."""
     document = (
@@ -510,6 +545,23 @@ def test_missing_file_and_malformed_toml_fail_closed(tmp_path: Path) -> None:
             b"\xff",
             expected_environment=OperatingEnvironment.RESEARCH,
         )
+
+
+def test_parser_value_errors_are_wrapped_as_configuration_errors() -> None:
+    """Untrusted numeric literals cannot escape the public error boundary."""
+    oversized_integer = "9" * 5_000
+    document = _configuration_toml().replace(
+        "max_experiments = 8",
+        f"max_experiments = {oversized_integer}",
+    )
+
+    with pytest.raises(ConfigurationError, match="TOML is invalid") as error:
+        loads_configuration(
+            document,
+            expected_environment=OperatingEnvironment.RESEARCH,
+        )
+
+    assert isinstance(error.value.__cause__, ValueError)
 
 
 def test_unknown_environment_fails_closed() -> None:

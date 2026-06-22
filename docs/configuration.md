@@ -92,7 +92,9 @@ and broker credentials are outside the repository's current authority.
 
 - includes the schema version and every material typed setting;
 - parses TOML decimal values directly without a binary floating-point round trip;
-- normalizes numerically equal decimal values as the same strings;
+- serializes decimals from their exact coefficient and exponent without consulting the active
+  decimal context;
+- normalizes numerically equal decimal values as the same coefficient/exponent strings;
 - sorts object keys;
 - includes secret reference identifiers but cannot include secret values; and
 - is deterministic for identical typed inputs.
@@ -102,7 +104,8 @@ evidence of configuration content, not authority to promote, deploy, or trade.
 
 ## Failure behaviour
 
-The boundary raises `ConfigurationError` for unreadable files, invalid UTF-8 or TOML, unsupported
-versions or environments, expected-environment mismatches, missing or unknown fields, invalid
-types or ranges, duplicate or malformed instruments, unsafe permission flags, and malformed or
-duplicate secret references. There is no permissive fallback configuration.
+The boundary raises `ConfigurationError` for unreadable files, invalid UTF-8 or TOML (including
+numeric conversion failures raised by the parser), unsupported versions or environments,
+expected-environment mismatches, missing or unknown fields, invalid types or ranges, duplicate or
+malformed instruments, unsafe permission flags, and malformed or duplicate secret references.
+There is no permissive fallback configuration.

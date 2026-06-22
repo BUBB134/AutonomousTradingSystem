@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tomllib
 from collections.abc import Mapping
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 from pathlib import Path
 from typing import cast
 
@@ -319,7 +319,7 @@ def loads_configuration(
             Mapping[str, object],
             tomllib.loads(text, parse_float=Decimal),
         )
-    except tomllib.TOMLDecodeError as error:
+    except (ValueError, DecimalException) as error:
         raise ConfigurationError(f"configuration TOML is invalid: {error}") from error
     return _parse_configuration(document, expected_environment=expected_environment)
 

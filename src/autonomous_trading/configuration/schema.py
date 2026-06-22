@@ -58,10 +58,21 @@ def _validate_decimal(
 
 
 def _canonical_decimal(value: Decimal) -> str:
-    normalized = value.normalize()
-    if normalized == 0:
-        return "0"
-    return format(normalized, "f")
+    sign, digits, exponent = value.as_tuple()
+    if type(exponent) is not int:
+        raise ConfigurationError("snapshot decimals must be finite")
+    if all(digit == 0 for digit in digits):
+        return "0e0"
+
+    significant_digits = list(digits)
+    adjusted_exponent = exponent
+    while significant_digits[-1] == 0:
+        significant_digits.pop()
+        adjusted_exponent += 1
+
+    coefficient = "".join(str(digit) for digit in significant_digits)
+    prefix = "-" if sign else ""
+    return f"{prefix}{coefficient}e{adjusted_exponent}"
 
 
 @dataclass(frozen=True, slots=True)
