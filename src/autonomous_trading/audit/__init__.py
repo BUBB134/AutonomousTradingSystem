@@ -1,6 +1,27 @@
-"""Append-only audit schemas and interfaces.
+"""Typed, versioned, append-only audit interfaces."""
 
-No public runtime interface exists yet. BUB-10 will introduce the first versioned audit API.
-"""
+from .log import InMemoryAuditLog
+from .schema import (
+    AUDIT_EVENT_SCHEMA_VERSION,
+    REDACTED_VALUE,
+    ActorKind,
+    AuditActor,
+    AuditError,
+    AuditEvent,
+    AuditIntegrityError,
+    AuditPayload,
+    AuditValidationError,
+)
 
-__all__: tuple[str, ...] = ()
+__all__ = [
+    "AUDIT_EVENT_SCHEMA_VERSION",
+    "REDACTED_VALUE",
+    "ActorKind",
+    "AuditActor",
+    "AuditError",
+    "AuditEvent",
+    "AuditIntegrityError",
+    "AuditPayload",
+    "AuditValidationError",
+    "InMemoryAuditLog",
+]

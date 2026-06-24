@@ -15,3 +15,4 @@ rather than rewriting history after implementation.
 - [BUB-7: Define package boundaries and dependency rules](BUB-7-package-boundaries.md)
 - [BUB-28: Add initial Codex repository skills](BUB-28-initial-repository-skills.md)
 - [BUB-8: Implement typed configuration loading](BUB-8-typed-configuration.md)
+- [BUB-10: Implement append-only audit event schema](BUB-10-append-only-audit-events.md)
