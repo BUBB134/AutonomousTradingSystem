@@ -116,7 +116,7 @@ Unless a row is marked implemented, its public contract remains planned future w
 | Package | Owner and responsibility | Allowed direct package imports | Public contract |
 | --- | --- | --- | --- |
 | `configuration` | Platform configuration; typed, versioned, fail-closed settings | none | Implemented: immutable schemas, strict TOML loaders, and content-addressed snapshots |
-| `audit` | Audit integrity; append-only attributable events | none | Versioned immutable audit events |
+| `audit` | Audit integrity; append-only attributable events | none | Implemented: versioned immutable events, canonical integrity evidence, and append-only replay |
 | `data` | Data integrity; canonical records and approved local access | none | Market-data records, quality results, and reader protocols |
 | `strategy` | Strategy authors; chronology-safe signal generation only | `data` | Signal-generation protocols and signal records |
 | `portfolio` | Portfolio construction; signals to proposed targets | `data`, `strategy` | Proposed target and portfolio-state contracts |

@@ -9,9 +9,9 @@ The first milestone is restricted to research, deterministic backtesting, indepe
 validation, and isolated paper simulation. Live trading, leverage, short selling, brokerage
 connections, and real financial credentials are not permitted.
 
-The repository currently contains development infrastructure, governed package boundaries, and a
-typed fail-closed configuration boundary. It intentionally contains no market-data integrations,
-strategies, broker SDKs, or trading logic.
+The repository currently contains development infrastructure, governed package boundaries, a typed
+fail-closed configuration boundary, and immutable append-only audit event schemas. It intentionally
+contains no market-data integrations, strategies, broker SDKs, or trading logic.
 
 ## Requirements
 
@@ -91,6 +91,9 @@ Repository work is governed by the following documents:
 - [Documentation index](docs/README.md) — decisions, implementation plans, runbooks, and validation
 - [Repository skills](docs/skills.md) — bounded Codex workflows and update rules
 - [Configuration](docs/configuration.md) — versioned schemas, failure behaviour, and snapshots
+
+The [audit-event documentation](docs/audit.md) defines immutable event, integrity, redaction,
+ordering, idempotency, and replay behaviour.
 
 All changes require human review and merge. No document or implementation may enable live trading
 or access real financial credentials.
