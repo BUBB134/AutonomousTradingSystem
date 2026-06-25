@@ -81,7 +81,9 @@ def _is_sensitive_key(key: str) -> bool:
     separated = _CAMEL_BOUNDARY_PATTERN.sub("_", key)
     tokens = tuple(token.lower() for token in _KEY_SEPARATOR_PATTERN.split(separated) if token)
     compact = "".join(tokens)
-    return bool(_SENSITIVE_TOKENS.intersection(tokens)) or compact in _SENSITIVE_COMPACT_KEYS
+    return bool(_SENSITIVE_TOKENS.intersection(tokens)) or any(
+        sensitive_key in compact for sensitive_key in _SENSITIVE_COMPACT_KEYS
+    )
 
 
 def _normalise_json_value(value: object, *, path: str) -> object:

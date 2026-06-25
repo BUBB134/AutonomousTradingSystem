@@ -108,6 +108,8 @@ def test_payload_is_detached_and_event_is_immutable() -> None:
     [
         ("password", "plain-text"),
         ("api_key", "key-value"),
+        ("api_key_value", "key-value"),
+        ("private_key_pem", "key-value"),
         ("refreshToken", "token-value"),
         ("nested", {"credentials": {"username": "user", "password": "value"}}),
     ],
@@ -127,12 +129,19 @@ def test_explicit_redaction_marker_is_serialized_without_secret_value() -> None:
     payload = AuditPayload.from_mapping(
         schema_name="operator.action",
         schema_version=1,
-        values={"authorization": REDACTED_VALUE, "action": "pause"},
+        values={
+            "action": "pause",
+            "api_key_value": REDACTED_VALUE,
+            "authorization": REDACTED_VALUE,
+            "private_key_pem": REDACTED_VALUE,
+        },
     )
 
     assert payload.to_mapping() == {
         "action": "pause",
+        "api_key_value": REDACTED_VALUE,
         "authorization": REDACTED_VALUE,
+        "private_key_pem": REDACTED_VALUE,
     }
     assert "plain-text" not in payload.canonical_json
 
