@@ -10,8 +10,9 @@ validation, and isolated paper simulation. Live trading, leverage, short selling
 connections, and real financial credentials are not permitted.
 
 The repository currently contains development infrastructure, governed package boundaries, a typed
-fail-closed configuration boundary, and immutable append-only audit event schemas. It intentionally
-contains no market-data integrations, strategies, broker SDKs, or trading logic.
+fail-closed configuration boundary, immutable append-only audit event schemas, and an auditable
+strategy lifecycle state machine. It intentionally contains no market-data integrations,
+strategies, broker SDKs, or trading logic.
 
 ## Requirements
 
@@ -92,8 +93,12 @@ Repository work is governed by the following documents:
 - [Repository skills](docs/skills.md) — bounded Codex workflows and update rules
 - [Configuration](docs/configuration.md) — versioned schemas, failure behaviour, and snapshots
 
+- [Registry lifecycle](docs/registry.md) - states, transitions, evidence, and failure behaviour
+
 The [audit-event documentation](docs/audit.md) defines immutable event, integrity, redaction,
 ordering, idempotency, and replay behaviour.
+The [registry lifecycle documentation](docs/registry.md) defines strategy lifecycle states,
+transitions, promotion evidence, record-only limited-live constraints, and failure behaviour.
 
 All changes require human review and merge. No document or implementation may enable live trading
 or access real financial credentials.

@@ -126,7 +126,7 @@ Unless a row is marked implemented, its public contract remains planned future w
 | `backtest` | Deterministic chronology-safe simulation orchestration | `audit`, `configuration`, `data`, `execution`, `portfolio`, `reconciliation`, `risk`, `strategy` | Backtest requests and immutable results |
 | `experiment` | Experiment owners; immutable manifests and artifact references | `audit`, `backtest`, `configuration` | Versioned manifests and immutable artifact references |
 | `validation` | Independent validators; attempt to falsify experiment claims | `data`, `experiment` | Validation checks and reports; no strategy internals |
-| `registry` | Lifecycle and evidence registry; record state and promotion evidence | `audit`, `configuration`, `experiment`, `validation` | Strategy, experiment, and promotion records |
+| `registry` | Lifecycle and evidence registry; record state and promotion evidence | `audit`, `configuration`, `experiment`, `validation` | Implemented: strategy lifecycle states, transition records, promotion evidence references, and audit-event payloads. Future: experiment and promotion records |
 | `monitoring` | Operations visibility; read-only health and evidence views | `audit`, `execution`, `experiment`, `reconciliation`, `registry`, `risk`, `validation` | Health snapshots, alerts, and metrics |
 | `control_plane` | Operators; read-only status and audited simulator controls | `audit`, `configuration`, `monitoring` | Status queries and simulator-only control requests |
 | `deployment` | Repository operators; research and isolated-paper composition root | all packages above | Research, backtest, validation, and paper entrypoints only |
