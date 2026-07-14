@@ -67,13 +67,17 @@ Promotion transitions require at least one `EvidenceReference`:
 - `LIVE_CANDIDATE -> LIMITED_LIVE`
 
 Each evidence reference records a kind, URI, SHA-256 digest, schema name, and schema version.
-Duplicate evidence references in the same transition are rejected.
+Duplicate evidence references and conflicting digests for the same artifact identity in one
+transition are rejected.
 
 `LIVE_CANDIDATE -> LIMITED_LIVE` also requires:
 
 - an `ApprovalRecord` whose evidence kind is `owner_approval`; and
 - a `RiskEnvelope` with explicit symbols, maximum gross exposure fraction, maximum single-position
   fraction, and UTC expiry timestamp.
+
+The approval timestamp must be at or before the transition decision time, and the risk envelope
+must expire after it. Future approvals and stale or already-expired envelopes fail closed.
 
 Approval records and risk envelopes are rejected on all other transitions.
 
@@ -83,8 +87,9 @@ Approval records and risk envelopes are rejected on all other transitions.
 `StrategyLifecycleTransition`; the prior lifecycle remains unchanged. Replayed history must match
 strategy ID, sequence number, prior state, and unique transition IDs.
 
-Transition timestamps must be explicit UTC datetimes. The registry never reads the wall clock,
-generates hidden IDs, talks to external services, or falls back to a permissive state.
+Transition timestamps must be explicit UTC datetimes and must not move backward in append order.
+The registry never reads the wall clock, generates hidden IDs, talks to external services, or falls
+back to a permissive state.
 
 ## Audit Evidence
 

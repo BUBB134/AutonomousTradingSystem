@@ -364,6 +364,7 @@ class StrategyLifecycleTransition:
         _validate_transition_requirements(
             from_state=self.from_state,
             to_state=self.to_state,
+            decided_at=self.decided_at,
             evidence=self.evidence,
             approval_record=self.approval_record,
             risk_envelope=self.risk_envelope,
@@ -427,20 +428,23 @@ def _validate_unique_evidence(evidence: tuple[EvidenceReference, ...]) -> None:
         (
             reference.kind,
             reference.uri,
-            reference.sha256,
             reference.schema_name,
             reference.schema_version,
         )
         for reference in evidence
     ]
     if len(set(evidence_keys)) != len(evidence_keys):
-        raise StrategyLifecycleValidationError("transition.evidence must not contain duplicates")
+        raise StrategyLifecycleValidationError(
+            "transition.evidence must not contain duplicates or conflicting digests "
+            "for one artifact reference"
+        )
 
 
 def _validate_transition_requirements(
     *,
     from_state: StrategyLifecycleState,
     to_state: StrategyLifecycleState,
+    decided_at: datetime,
     evidence: tuple[EvidenceReference, ...],
     approval_record: ApprovalRecord | None,
     risk_envelope: RiskEnvelope | None,
@@ -458,6 +462,14 @@ def _validate_transition_requirements(
             raise StrategyLifecycleValidationError("LIMITED_LIVE requires an approval record")
         if risk_envelope is None:
             raise StrategyLifecycleValidationError("LIMITED_LIVE requires a risk envelope")
+        if approval_record.approved_at > decided_at:
+            raise StrategyLifecycleValidationError(
+                "LIMITED_LIVE approval_record.approved_at must not be after transition.decided_at"
+            )
+        if risk_envelope.expires_at <= decided_at:
+            raise StrategyLifecycleValidationError(
+                "LIMITED_LIVE risk_envelope.expires_at must be after transition.decided_at"
+            )
     elif approval_record is not None or risk_envelope is not None:
         raise StrategyLifecycleValidationError(
             "approval records and risk envelopes are only valid for LIMITED_LIVE transitions"
@@ -482,6 +494,7 @@ class StrategyLifecycle:
             raise StrategyLifecycleValidationError("lifecycle.transitions must be a tuple")
         expected_from_state = StrategyLifecycleState.PROPOSED
         seen_transition_ids: set[UUID] = set()
+        previous_decided_at: datetime | None = None
         for index, transition in enumerate(self.transitions, start=1):
             if type(transition) is not StrategyLifecycleTransition:
                 raise StrategyLifecycleValidationError(
@@ -504,6 +517,11 @@ class StrategyLifecycle:
                 raise StrategyLifecycleIntegrityError(
                     "transition from_state does not match prior lifecycle state"
                 )
+            if previous_decided_at is not None and transition.decided_at < previous_decided_at:
+                raise StrategyLifecycleIntegrityError(
+                    "transition decided_at precedes the prior transition in append order"
+                )
+            previous_decided_at = transition.decided_at
             expected_from_state = transition.to_state
         if self.current_state is not expected_from_state:
             raise StrategyLifecycleIntegrityError(

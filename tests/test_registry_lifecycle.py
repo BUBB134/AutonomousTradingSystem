@@ -55,20 +55,20 @@ def _evidence(kind: str = "promotion_evidence", value: int = 1) -> EvidenceRefer
     )
 
 
-def _approval(value: int = 100) -> ApprovalRecord:
+def _approval(value: int = 100, *, approved_at: datetime = DECIDED_AT) -> ApprovalRecord:
     return ApprovalRecord(
         approved_by="owner",
-        approved_at=DECIDED_AT + timedelta(minutes=value),
+        approved_at=approved_at,
         approval_reference=_evidence("owner_approval", value),
     )
 
 
-def _risk_envelope() -> RiskEnvelope:
+def _risk_envelope(*, expires_at: datetime | None = None) -> RiskEnvelope:
     return RiskEnvelope(
         allowed_symbols=("AAA", "BBB"),
         max_gross_exposure_fraction=Decimal("0.25"),
         max_single_position_fraction=Decimal("0.10"),
-        expires_at=DECIDED_AT + timedelta(days=30),
+        expires_at=expires_at or DECIDED_AT + timedelta(days=30),
     )
 
 
@@ -83,6 +83,7 @@ def _transition(
     strategy_id: str = STRATEGY_ID,
     transition_id: UUID | None = None,
     actor: str = "codex",
+    decided_at: datetime | None = None,
 ) -> StrategyLifecycleTransition:
     return StrategyLifecycleTransition(
         schema_version=STRATEGY_LIFECYCLE_SCHEMA_VERSION,
@@ -91,7 +92,7 @@ def _transition(
         sequence=sequence,
         from_state=from_state,
         to_state=to_state,
-        decided_at=DECIDED_AT + timedelta(minutes=sequence),
+        decided_at=decided_at or DECIDED_AT + timedelta(minutes=sequence),
         actor=actor,
         evidence=evidence,
         approval_record=approval_record,
@@ -347,6 +348,36 @@ def test_limited_live_requires_approval_record_and_risk_envelope() -> None:
         )
 
 
+def test_limited_live_rejects_future_approval_and_expired_risk_envelope() -> None:
+    """Limited-live controls must be valid at the transition decision time."""
+    lifecycle = _advance_to(StrategyLifecycleState.LIVE_CANDIDATE)
+    decided_at = DECIDED_AT + timedelta(hours=2)
+
+    with pytest.raises(StrategyLifecycleValidationError, match="approved_at"):
+        lifecycle.transition_to(
+            transition_id=_uuid(22),
+            to_state=StrategyLifecycleState.LIMITED_LIVE,
+            decided_at=decided_at,
+            actor="owner",
+            evidence=(_evidence("limited_live_packet", 22),),
+            approval_record=_approval(22, approved_at=decided_at + timedelta(seconds=1)),
+            risk_envelope=_risk_envelope(),
+        )
+
+    with pytest.raises(StrategyLifecycleValidationError, match="expires_at"):
+        lifecycle.transition_to(
+            transition_id=_uuid(23),
+            to_state=StrategyLifecycleState.LIMITED_LIVE,
+            decided_at=decided_at,
+            actor="owner",
+            evidence=(_evidence("limited_live_packet", 23),),
+            approval_record=_approval(23),
+            risk_envelope=_risk_envelope(expires_at=decided_at),
+        )
+
+    assert lifecycle.current_state is StrategyLifecycleState.LIVE_CANDIDATE
+
+
 def test_approval_record_and_risk_envelope_are_rejected_on_other_transitions() -> None:
     """Live-approval controls cannot be attached to unrelated lifecycle transitions."""
     with pytest.raises(StrategyLifecycleValidationError, match="only valid"):
@@ -436,6 +467,20 @@ def test_transition_boundaries_reject_non_utc_time_and_duplicate_evidence() -> N
             evidence=(duplicate, duplicate),
         )
 
+    conflicting = EvidenceReference(
+        kind=duplicate.kind,
+        uri=duplicate.uri,
+        sha256="f" * 64,
+        schema_name=duplicate.schema_name,
+        schema_version=duplicate.schema_version,
+    )
+    with pytest.raises(StrategyLifecycleValidationError, match="conflicting digests"):
+        _transition(
+            from_state=StrategyLifecycleState.RESEARCH,
+            to_state=StrategyLifecycleState.BACKTESTED,
+            evidence=(duplicate, conflicting),
+        )
+
 
 def test_lifecycle_history_is_immutable_and_replay_is_deterministic() -> None:
     """History snapshots and frozen records cannot mutate authoritative lifecycle state."""
@@ -477,6 +522,24 @@ def test_replay_rejects_mismatched_strategy_sequence_and_state() -> None:
     )
     with pytest.raises(StrategyLifecycleIntegrityError, match="from_state"):
         StrategyLifecycle.replay(strategy_id=STRATEGY_ID, transitions=(wrong_from_state,))
+
+    researched = _transition(
+        transition_id=_uuid(10),
+        decided_at=DECIDED_AT + timedelta(minutes=2),
+    )
+    backdated_backtest = _transition(
+        from_state=StrategyLifecycleState.RESEARCH,
+        to_state=StrategyLifecycleState.BACKTESTED,
+        sequence=2,
+        transition_id=_uuid(11),
+        decided_at=DECIDED_AT + timedelta(minutes=1),
+        evidence=(_evidence("backtest_result", 11),),
+    )
+    with pytest.raises(StrategyLifecycleIntegrityError, match="decided_at"):
+        StrategyLifecycle.replay(
+            strategy_id=STRATEGY_ID,
+            transitions=(researched, backdated_backtest),
+        )
 
 
 def test_transition_to_audit_event_uses_registry_schema() -> None:
