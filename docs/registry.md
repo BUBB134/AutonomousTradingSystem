@@ -70,6 +70,9 @@ Each evidence reference records a kind, URI, SHA-256 digest, schema name, and sc
 Duplicate evidence references and conflicting digests for the same artifact identity in one
 transition are rejected.
 
+`BACKTESTED -> VALIDATED` must include an evidence reference whose kind is `validation_report`.
+Generic promotion or backtest evidence cannot mark a strategy independently validated.
+
 `LIVE_CANDIDATE -> LIMITED_LIVE` also requires:
 
 - an `ApprovalRecord` whose evidence kind is `owner_approval`; and
@@ -78,6 +81,8 @@ transition are rejected.
 
 The approval timestamp must be at or before the transition decision time, and the risk envelope
 must expire after it. Future approvals and stale or already-expired envelopes fail closed.
+If transition evidence and the approval record reference the same approval artifact identity, their
+SHA-256 digests must agree.
 
 Approval records and risk envelopes are rejected on all other transitions.
 
@@ -90,6 +95,9 @@ strategy ID, sequence number, prior state, and unique transition IDs.
 Transition timestamps must be explicit UTC datetimes and must not move backward in append order.
 The registry never reads the wall clock, generates hidden IDs, talks to external services, or falls
 back to a permissive state.
+
+Replay validates every history item before reading its state. Malformed history and invalid risk
+symbol values raise registry validation errors rather than raw runtime exceptions.
 
 ## Audit Evidence
 

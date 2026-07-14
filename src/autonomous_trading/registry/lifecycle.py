@@ -111,6 +111,7 @@ _PROMOTION_TRANSITIONS = frozenset(
         (StrategyLifecycleState.LIVE_CANDIDATE, StrategyLifecycleState.LIMITED_LIVE),
     }
 )
+_VALIDATION_EVIDENCE_KIND = "validation_report"
 
 
 def _validate_identifier(name: str, value: str) -> None:
@@ -267,12 +268,12 @@ class RiskEnvelope:
             raise StrategyLifecycleValidationError(
                 "risk_envelope.allowed_symbols must be a non-empty tuple"
             )
+        for symbol in self.allowed_symbols:
+            _validate_named_identifier("risk_envelope.allowed_symbols", symbol, _SYMBOL_PATTERN)
         if len(set(self.allowed_symbols)) != len(self.allowed_symbols):
             raise StrategyLifecycleValidationError(
                 "risk_envelope.allowed_symbols must not contain duplicates"
             )
-        for symbol in self.allowed_symbols:
-            _validate_named_identifier("risk_envelope.allowed_symbols", symbol, _SYMBOL_PATTERN)
         _validate_decimal(
             "risk_envelope.max_gross_exposure_fraction",
             self.max_gross_exposure_fraction,
@@ -423,21 +424,37 @@ class StrategyLifecycleTransition:
         )
 
 
+def _evidence_identity(reference: EvidenceReference) -> tuple[str, str, str, int]:
+    return (
+        reference.kind,
+        reference.uri,
+        reference.schema_name,
+        reference.schema_version,
+    )
+
+
 def _validate_unique_evidence(evidence: tuple[EvidenceReference, ...]) -> None:
-    evidence_keys = [
-        (
-            reference.kind,
-            reference.uri,
-            reference.schema_name,
-            reference.schema_version,
-        )
-        for reference in evidence
-    ]
+    evidence_keys = [_evidence_identity(reference) for reference in evidence]
     if len(set(evidence_keys)) != len(evidence_keys):
         raise StrategyLifecycleValidationError(
             "transition.evidence must not contain duplicates or conflicting digests "
             "for one artifact reference"
         )
+
+
+def _validate_approval_evidence_consistency(
+    evidence: tuple[EvidenceReference, ...],
+    approval_record: ApprovalRecord,
+) -> None:
+    approval_reference = approval_record.approval_reference
+    for reference in evidence:
+        if (
+            _evidence_identity(reference) == _evidence_identity(approval_reference)
+            and reference.sha256 != approval_reference.sha256
+        ):
+            raise StrategyLifecycleValidationError(
+                "transition evidence conflicts with approval_record.approval_reference digest"
+            )
 
 
 def _validate_transition_requirements(
@@ -457,11 +474,20 @@ def _validate_transition_requirements(
         raise StrategyLifecycleValidationError(
             "promotion transitions require machine-readable evidence references"
         )
+    if (
+        from_state is StrategyLifecycleState.BACKTESTED
+        and to_state is StrategyLifecycleState.VALIDATED
+        and not any(reference.kind == _VALIDATION_EVIDENCE_KIND for reference in evidence)
+    ):
+        raise StrategyLifecycleValidationError(
+            "BACKTESTED to VALIDATED requires validation_report evidence"
+        )
     if to_state is StrategyLifecycleState.LIMITED_LIVE:
         if approval_record is None:
             raise StrategyLifecycleValidationError("LIMITED_LIVE requires an approval record")
         if risk_envelope is None:
             raise StrategyLifecycleValidationError("LIMITED_LIVE requires a risk envelope")
+        _validate_approval_evidence_consistency(evidence, approval_record)
         if approval_record.approved_at > decided_at:
             raise StrategyLifecycleValidationError(
                 "LIMITED_LIVE approval_record.approved_at must not be after transition.decided_at"
@@ -542,6 +568,11 @@ class StrategyLifecycle:
     ) -> StrategyLifecycle:
         """Rebuild lifecycle state from append-ordered transition evidence."""
         transition_tuple = tuple(transitions)
+        for transition in transition_tuple:
+            if type(transition) is not StrategyLifecycleTransition:
+                raise StrategyLifecycleValidationError(
+                    "lifecycle.transitions must contain StrategyLifecycleTransition values"
+                )
         current_state = (
             transition_tuple[-1].to_state if transition_tuple else StrategyLifecycleState.PROPOSED
         )

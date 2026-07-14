@@ -113,7 +113,15 @@ def _transition_controls(
         (StrategyLifecycleState.PAPER, StrategyLifecycleState.LIVE_CANDIDATE),
         (StrategyLifecycleState.LIVE_CANDIDATE, StrategyLifecycleState.LIMITED_LIVE),
     }:
-        controls["evidence"] = (_evidence(value=200 + len(from_state.value)),)
+        evidence_kind = (
+            "validation_report"
+            if (
+                from_state is StrategyLifecycleState.BACKTESTED
+                and to_state is StrategyLifecycleState.VALIDATED
+            )
+            else "promotion_evidence"
+        )
+        controls["evidence"] = (_evidence(evidence_kind, value=200 + len(from_state.value)),)
     if to_state is StrategyLifecycleState.LIMITED_LIVE:
         controls["approval_record"] = _approval()
         controls["risk_envelope"] = _risk_envelope()
@@ -324,6 +332,16 @@ def test_research_cannot_transition_directly_to_paper_or_live_states() -> None:
             )
 
 
+def test_validated_requires_validation_report_evidence() -> None:
+    """Generic or backtest evidence cannot independently validate a strategy."""
+    with pytest.raises(StrategyLifecycleValidationError, match="validation_report"):
+        _transition(
+            from_state=StrategyLifecycleState.BACKTESTED,
+            to_state=StrategyLifecycleState.VALIDATED,
+            evidence=(_evidence("backtest_result", 19),),
+        )
+
+
 def test_limited_live_requires_approval_record_and_risk_envelope() -> None:
     """The record-only limited-live state needs both owner approval and a risk envelope."""
     lifecycle = _advance_to(StrategyLifecycleState.LIVE_CANDIDATE)
@@ -378,6 +396,31 @@ def test_limited_live_rejects_future_approval_and_expired_risk_envelope() -> Non
     assert lifecycle.current_state is StrategyLifecycleState.LIVE_CANDIDATE
 
 
+def test_limited_live_rejects_conflicting_nested_approval_evidence() -> None:
+    """One approval artifact identity cannot carry conflicting digests."""
+    approval_reference = _evidence("owner_approval", 24)
+    conflicting_reference = EvidenceReference(
+        kind=approval_reference.kind,
+        uri=approval_reference.uri,
+        sha256="f" * 64,
+        schema_name=approval_reference.schema_name,
+        schema_version=approval_reference.schema_version,
+    )
+
+    with pytest.raises(StrategyLifecycleValidationError, match="approval_record"):
+        _transition(
+            from_state=StrategyLifecycleState.LIVE_CANDIDATE,
+            to_state=StrategyLifecycleState.LIMITED_LIVE,
+            evidence=(conflicting_reference,),
+            approval_record=ApprovalRecord(
+                approved_by="owner",
+                approved_at=DECIDED_AT,
+                approval_reference=approval_reference,
+            ),
+            risk_envelope=_risk_envelope(),
+        )
+
+
 def test_approval_record_and_risk_envelope_are_rejected_on_other_transitions() -> None:
     """Live-approval controls cannot be attached to unrelated lifecycle transitions."""
     with pytest.raises(StrategyLifecycleValidationError, match="only valid"):
@@ -429,6 +472,15 @@ def test_approval_record_and_risk_envelope_are_rejected_on_other_transitions() -
                 expires_at=DECIDED_AT,
             ),
             "duplicates",
+        ),
+        (
+            lambda: RiskEnvelope(
+                allowed_symbols=(["AAA"],),  # pyright: ignore[reportArgumentType]
+                max_gross_exposure_fraction=Decimal("0.25"),
+                max_single_position_fraction=Decimal("0.10"),
+                expires_at=DECIDED_AT,
+            ),
+            "allowed_symbols",
         ),
         (
             lambda: ApprovalRecord(
@@ -514,6 +566,12 @@ def test_replay_rejects_mismatched_strategy_sequence_and_state() -> None:
     wrong_sequence = _transition(sequence=2)
     with pytest.raises(StrategyLifecycleIntegrityError, match="sequence"):
         StrategyLifecycle.replay(strategy_id=STRATEGY_ID, transitions=(wrong_sequence,))
+
+    with pytest.raises(StrategyLifecycleValidationError, match="contain"):
+        StrategyLifecycle.replay(
+            strategy_id=STRATEGY_ID,
+            transitions=("malformed",),  # pyright: ignore[reportArgumentType]
+        )
 
     wrong_from_state = _transition(
         from_state=StrategyLifecycleState.RESEARCH,
