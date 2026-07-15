@@ -16,6 +16,8 @@ Repository documentation is organised as follows:
 - [`skills.md`](skills.md) explains the bounded repository skills and their update workflow.
 - [`configuration.md`](configuration.md) documents the typed, fail-closed configuration boundary.
 - [`audit.md`](audit.md) documents immutable events, integrity checks, redaction, and replay.
+- [`registry.md`](registry.md) documents strategy lifecycle states, transitions, evidence, and
+  failure behaviour.
 
 Documentation must distinguish current behaviour from intended future design. No document may
 weaken `TRADING_MANDATE.md`.
@@ -27,3 +29,4 @@ Current architecture records:
 - [BUB-28 repository-skills implementation plan](plans/BUB-28-initial-repository-skills.md)
 - [BUB-8 typed-configuration implementation plan](plans/BUB-8-typed-configuration.md)
 - [BUB-10 append-only audit-event implementation plan](plans/BUB-10-append-only-audit-events.md)
+- [BUB-9 strategy lifecycle implementation plan](plans/BUB-9-strategy-lifecycle-state-machine.md)

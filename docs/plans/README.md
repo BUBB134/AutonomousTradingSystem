@@ -16,3 +16,4 @@ rather than rewriting history after implementation.
 - [BUB-28: Add initial Codex repository skills](BUB-28-initial-repository-skills.md)
 - [BUB-8: Implement typed configuration loading](BUB-8-typed-configuration.md)
 - [BUB-10: Implement append-only audit event schema](BUB-10-append-only-audit-events.md)
+- [BUB-9: Implement strategy lifecycle state machine](BUB-9-strategy-lifecycle-state-machine.md)

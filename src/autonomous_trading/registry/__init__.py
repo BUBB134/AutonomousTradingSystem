@@ -1,6 +1,37 @@
-"""Strategy lifecycle, experiment registry, and promotion-record interfaces.
+"""Strategy lifecycle, experiment registry, and promotion-record interfaces."""
 
-No public runtime interface exists yet.
-"""
+from .lifecycle import (
+    LEGAL_STRATEGY_LIFECYCLE_TRANSITIONS,
+    STRATEGY_LIFECYCLE_AUDIT_EVENT_TYPE,
+    STRATEGY_LIFECYCLE_AUDIT_SCHEMA_NAME,
+    STRATEGY_LIFECYCLE_SCHEMA_VERSION,
+    STRATEGY_LIFECYCLE_STATES,
+    ApprovalRecord,
+    EvidenceReference,
+    RiskEnvelope,
+    StrategyLifecycle,
+    StrategyLifecycleError,
+    StrategyLifecycleIntegrityError,
+    StrategyLifecycleState,
+    StrategyLifecycleTransition,
+    StrategyLifecycleValidationError,
+    is_legal_strategy_lifecycle_transition,
+)
 
-__all__: tuple[str, ...] = ()
+__all__ = [
+    "LEGAL_STRATEGY_LIFECYCLE_TRANSITIONS",
+    "STRATEGY_LIFECYCLE_AUDIT_EVENT_TYPE",
+    "STRATEGY_LIFECYCLE_AUDIT_SCHEMA_NAME",
+    "STRATEGY_LIFECYCLE_SCHEMA_VERSION",
+    "STRATEGY_LIFECYCLE_STATES",
+    "ApprovalRecord",
+    "EvidenceReference",
+    "RiskEnvelope",
+    "StrategyLifecycle",
+    "StrategyLifecycleError",
+    "StrategyLifecycleIntegrityError",
+    "StrategyLifecycleState",
+    "StrategyLifecycleTransition",
+    "StrategyLifecycleValidationError",
+    "is_legal_strategy_lifecycle_transition",
+]
